@@ -56,8 +56,8 @@ configParameters parse(int argc, char **argv) {
         exit(1);
     }
 
-    if (!power_of_two(params.num_sets) || !power_of_two(params.blocks_in_set) || power_of_two(params.block_size)) {
-        cerr << "Error: Number of sets, blocks in sets, and block size must all be powers of 2.\n";
+    if (!power_of_two(params.num_sets) || !power_of_two(params.blocks_in_set)) {
+        cerr << "Error: Number of sets and blocks in sets must both be powers of 2.\n";
         exit(1);
     }
 
