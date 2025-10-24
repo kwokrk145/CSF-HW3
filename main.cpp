@@ -100,6 +100,46 @@ configParameters parse(int argc, char **argv) {
     return params; 
 }
 
+void simulate_direct(cache &cach, const configParameters param, cacheStats &result ) {
+    string line;
+    string address;
+    char operation;
+    unsigned extra;
+    
+
+    while (getline(cin, line)) {
+      if (line.empty()) {
+        continue;
+      }
+      istringstream str(line);
+      str >> operation; 
+      str >> address;
+      str >> extra;
+
+    }
+
+}
+
+void simulate_set_associative(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
+void simulate_fully_associative(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
+void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+  if (params.cache_type == "direct") { simulate_direct(c, params, stats); }
+  else if (params.cache_type == "set-associative") { simulate_set_associative(c, params, stats); }
+  else if (params.cache_type == "fully-associative") { simulate_fully_associative(c, params, stats);} 
+  else {
+    cerr << "Error:unknown cache type in run_simulation()" << std::endl;
+    exit(1);
+  }
+}
+
+
 cache initialize_cache(const configParameters params) {
   cache c;
   c.sets = vector<set>(params.num_sets);
@@ -179,11 +219,30 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
     }
 }
 
+cacheStats initialize_stats() {
+  cacheStats s = {0, 0, 0, 0, 0, 0, 0};
+  return s;
+}
+
+void print_stats(const cacheStats &stats) {
+  cout << "Total loads: " << stats.total_loads << endl;
+  cout << "Total stores: " << stats.total_stores << endl;
+  cout << "Load hits: " << stats.load_hits << endl;
+  cout << "Load misses: " << stats.load_misses << endl;
+  cout << "Store hits: " << stats.store_hits << endl;
+  cout << "Store misses: " << stats.store_misses << endl;
+}
 
 int main( int argc, char **argv ) {
   // TODO: implement
   configParameters params = parse(argc, argv);
-
+  cacheStats stats = initialize_stats();
   cache cache = initialize_cache(params);
+
+  run_simulation(cache, params, stats);
+
+  print_stats(stats);
+
+
   return 0;
 }
