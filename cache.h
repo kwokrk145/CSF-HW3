@@ -32,5 +32,7 @@ struct configParameters {
     string eviction_rule;
 };
 
+configParameters parse(int argc, char **argv);
+
 
 #endif
