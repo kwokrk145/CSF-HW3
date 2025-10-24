@@ -134,7 +134,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
           result.store_hits++;
           
           if (param.write_rule == "write-through") {
-            result.total_cycles += 101;
+            result.total_cycles += 100 + 1;
           } else if (param.write_rule == "write-back") {
             result.total_cycles += 1;
             b.dirty = true;
@@ -145,7 +145,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
           result.store_misses++;
 
           if (param.write_allocate == "write-allocate") {
-            result.total_cycles += 101;
+            result.total_cycles += 100 + 1;
             b.tag = tag;
             b.valid = true;
 
@@ -156,7 +156,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
             }
           }
         } else if (operation == 'l') {
-          result.total_cycles += 101;
+          result.total_cycles += 100 + 1;
           result.load_misses++;
           b.tag = tag;
           b.valid = true;
@@ -167,8 +167,121 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
 }
 
 
-void simulate_set_associative(cache &c, const configParameters &params, cacheStats &stats) {
+block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
+  for (int i = 0; i < param.blocks_in_set; i++) {
+    if (s.blocks[i].valid == false) {
+      return &s.blocks[i];
+    }
+  }
+
+  block *toEvict = &s.blocks[0];
+  for (int i = 0; i < param.blocks_in_set; i++) {
+    block &b = s.blocks[i];
+    if (b.timestamp < toEvict->timestamp) {
+      toEvict = &b;
+    }
+  }
+
+  if (toEvict->dirty && toEvict->valid && param.write_rule == "write-back") {
+    stats.total_cycles += 100;
+    toEvict->dirty = false;
+  }
+
+  return toEvict;
+
+
+}
+
+
+void simulate_set_associative(cache &c, const configParameters &param, cacheStats &stats) {
   // TODO: implement
+  string line;
+  string address;
+  char operation;
+  unsigned extra;
+  uint64_t current_time = 0;
+
+  int offset_bits = log2(param.block_size);
+  int index_bits = log2(param.num_sets);
+
+  while (getline(cin, line)) {
+    if (line.empty()) {
+      continue;
+    }
+    istringstream str(line);
+    str >> operation;
+    str >> address;
+    str >> extra;
+
+    uint32_t address_int = stoul(address, nullptr, 16);
+    uint32_t index = (address_int >> offset_bits) & ((1 << index_bits) - 1);
+    uint32_t tag = address_int >> (offset_bits + index_bits);
+
+    set &s = c.sets[index];
+    current_time++;
+
+    if (operation == 'l') {
+      stats.total_loads++;
+    } else if (operation == 's') {
+      stats.total_stores++;
+    }
+
+    bool hit = false;
+    for (int i = 0; i < param.blocks_in_set; i++) {
+      if (s.blocks[i].valid && s.blocks[i].tag == tag) {
+        hit = true;
+        block &b = s.blocks[i];
+        b.timestamp = current_time;
+
+        if (operation == 'l') {
+          stats.load_hits++;
+          stats.total_cycles++;
+        } else if (operation == 's') {
+          stats.store_hits++;
+          if (param.write_rule == "write-through") {
+            stats.total_cycles += 100 + 1;
+          } else if (param.write_rule == "write_back") {
+            b.dirty = true;
+            stats.total_cycles++;
+          }
+        }
+        break;
+      }
+    }
+
+    if (!hit) {
+      if (operation == 's') {
+        stats.store_misses++;
+      } else if (operation == 'l') {
+        stats.load_misses++;
+      }
+
+      if (operation == 'l' || param.write_allocate == "write-allocate") {
+        block *toEvict = chooseBlock(s, param, stats);
+        stats.total_cycles += 100 + 1;
+        toEvict->valid = true;
+        toEvict-> tag = tag;
+        toEvict->timestamp = current_time;
+        toEvict->dirty = false;
+
+        if (operation == 's') {
+          if (param.write_rule == "write-through") {
+            stats.total_cycles += 100;
+          } else if (param.write_rule == "write-back") {
+            toEvict->dirty = true;
+          }
+        }
+      } else if (operation == 's' && param.write_allocate == "no-write-allocate") {
+        stats.total_cycles += 100;
+
+      }
+
+    }
+
+
+  }
+
+
 }
 
 
@@ -227,9 +340,6 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
         break;
       }
     }
-
-
-    
     if (operation == 'l') { // load
       stats.total_loads++;
 
