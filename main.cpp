@@ -98,7 +98,7 @@ configParameters parse(int argc, char **argv) {
     return params; 
 }
 
-void simulate_direct(cache &cach, const configParameters param, results &result ) {
+void simulate_direct(cache &cach, const configParameters param, cacheStats &result ) {
     string line;
     string address;
     char operation;
@@ -118,6 +118,14 @@ void simulate_direct(cache &cach, const configParameters param, results &result 
 
 }
 
+void simulate_set_associative(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
+void simulate_fully_associative(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
 void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
   // TODO: implement
   if (params.cache_type == "direct") { simulate_direct(c, params, stats); }
@@ -127,7 +135,6 @@ void run_simulation(cache &c, const configParameters &params, cacheStats &stats)
     cerr << "Error:unknown cache type in run_simulation()" << std::endl;
     exit(1);
   }
-  
 }
 
 
