@@ -116,7 +116,9 @@ void simulate_direct(cache &cach, const configParameters param, results &result 
 
     }
 
-}cache initialize_cache(const configParameters params) {
+}
+
+cache initialize_cache(const configParameters params) {
   cache c;
   c.sets = vector<set>(params.num_sets);
   for (int i = 0; i < params.num_sets; i++) {
