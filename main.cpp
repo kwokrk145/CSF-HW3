@@ -118,6 +118,11 @@ void simulate_direct(cache &cach, const configParameters param, results &result 
 
 }
 
+void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
+
 cache initialize_cache(const configParameters params) {
   cache c;
   c.sets = vector<set>(params.num_sets);
@@ -138,12 +143,25 @@ cacheStats initialize_stats() {
   return s;
 }
 
-
+void print_stats(const cacheStats &stats) {
+  cout << "Total loads: " << stats.total_loads << endl;
+  cout << "Total stores: " << stats.total_stores << endl;
+  cout << "Load hits: " << stats.load_hits << endl;
+  cout << "Load misses: " << stats.load_misses << endl;
+  cout << "Store hits: " << stats.store_hits << endl;
+  cout << "Store misses: " << stats.store_misses << endl;
+}
 
 int main( int argc, char **argv ) {
   // TODO: implement
   configParameters params = parse(argc, argv);
   cacheStats stats = initialize_stats();
   cache cache = initialize_cache(params);
+
+  run_simulation(cache, params, stats);
+
+  print_stats(stats);
+
+
   return 0;
 }
