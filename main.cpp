@@ -171,8 +171,198 @@ void simulate_set_associative(cache &c, const configParameters &params, cacheSta
   // TODO: implement
 }
 
+
+/*
+Fully-Associative Cache:
+- The entire cache is a single set.
+- All blocks are placed in the same set.
+- The tag is the same for all blocks in the cache.
+- The index is not used.
+- The offset is the same for all blocks in the cache.
+Behavior plan:
+decode tag only (offset = log2(block_size))
+search all blocks in the set for matching tag (and valid)
+LRU: use block.timestamp as last-accessed timestamp (update timestamp on access)
+FIFO: use block.timestamp as last-accessed timestamp (set when block is filled, do NOT update on access)
+(etc..)
+*/
 void simulate_fully_associative(cache &c, const configParameters &params, cacheStats &stats) {
   // TODO: implement
+  string line;
+  char operation;
+  string address_str;
+  unsigned extra;
+
+  uint64_t global_time = 0; //global timestamp updated each access for LRU and FIFI
+
+  int offset_bits = (int)std::log2(params.block_size);
+
+  //one set: 
+  set &cache_set = c.sets[0]; 
+    
+
+  while (std::getline(cin, line)) { //each line from cin 
+    if (line.empty()) {
+      continue;
+    }
+
+    //extract operating, address, and extra from line
+    istringstream str(line);
+    str >> operation; 
+    str >> address_str;
+    str >> extra;
+
+    uint32_t address = std::stoul(address_str, nullptr, 16); //convert hex string to unsigned decimal int
+    uint32_t tag = address >> offset_bits; //offset bits rep bytes w/in block
+    global_time++;
+
+    bool hit = false; //init to miss
+    int hit_index = -1;
+
+    // check every block in single set; if valid and matching tag, hit
+    for (int i = 0; i < params.blocks_in_set; i++) {
+      if (cache_set.blocks[i].valid && cache_set.blocks[i].tag == tag) {
+        hit = true;
+        hit_index = i;
+        break;
+      }
+    }
+
+
+    
+    if (operation == 'l') { // load
+      stats.total_loads++;
+
+      if (hit) {
+        stats.load_hits++;
+
+        stats.total_cycles += 1; // cache hit -> 1 cycle
+
+
+        if (params.eviction_rule == "lru") {
+          cache_set.blocks[hit_index].timestamp = global_time;
+        }
+      } 
+      else { //miss
+        stats.load_misses++;
+
+        // Find empty or evict block
+        int replace_index = -1;
+            
+        for (int i = 0; i < params.blocks_in_set; i++) {
+          if (!cache_set.blocks[i].valid) {
+              replace_index = i;
+              break;
+          }
+        }
+
+        if (replace_index == -1) {
+          // evict based on policy
+          uint64_t oldest = cache_set.blocks[0].timestamp;
+          replace_index = 0;
+          for (int i = 1; i < params.blocks_in_set; i++) {
+            if (cache_set.blocks[i].timestamp < oldest) {
+              oldest = cache_set.blocks[i].timestamp;
+              replace_index = i;
+            }
+          }
+
+          //write back if dirty and using write-back
+          if (params.write_rule == "write-back" && cache_set.blocks[replace_index].dirty) {
+            stats.total_cycles += 100; // write dirty block to memory
+            cache_set.blocks[replace_index].dirty = false;
+          }
+        }
+
+        // new block into cache
+        cache_set.blocks[replace_index].valid = true;
+        cache_set.blocks[replace_index].dirty = false;
+        cache_set.blocks[replace_index].tag = tag;
+        cache_set.blocks[replace_index].timestamp = global_time;
+
+        stats.total_cycles += 100 + 1; // memory read + cache write
+      }
+    }
+
+
+    //store
+    else if (operation == 's') {
+      stats.total_stores++;
+
+      if (hit) {
+        stats.store_hits++;
+        if (params.write_rule == "write-through") {
+          stats.total_cycles += 101; // 1 for cache +100 for mem
+        } 
+        else if (params.write_rule == "write-back") {
+          cache_set.blocks[hit_index].dirty = true;
+          stats.total_cycles += 1;
+        }
+
+        if (params.eviction_rule == "lru") {
+          cache_set.blocks[hit_index].timestamp = global_time;
+        }
+      } 
+
+      else {
+        stats.store_misses++;
+
+        if (params.write_allocate == "write-allocate") {
+                
+          int replace_index = -1;
+          for (int i = 0; i < params.blocks_in_set; i++) {
+            if (!cache_set.blocks[i].valid) {
+              replace_index = i;
+              break;
+            }
+          }
+
+          if (replace_index == -1) {
+                    
+            // evict - LRU/FIFO
+                    
+            uint64_t oldest = cache_set.blocks[0].timestamp;
+                    
+            replace_index = 0;
+                    
+            for (int i = 1; i < params.blocks_in_set; i++) {  
+              if (cache_set.blocks[i].timestamp < oldest) {     
+                oldest = cache_set.blocks[i].timestamp;
+                replace_index = i;
+              }
+            }
+
+            if (params.write_rule == "write-back" && cache_set.blocks[replace_index].dirty) {
+              stats.total_cycles += 100; // write back dirty
+              cache_set.blocks[replace_index].dirty = false;
+            }
+          }
+
+          cache_set.blocks[replace_index].valid = true;
+          cache_set.blocks[replace_index].tag = tag;
+          cache_set.blocks[replace_index].timestamp = global_time;
+
+          if (params.write_rule == "write-back") {
+            cache_set.blocks[replace_index].dirty = true;
+            stats.total_cycles += 100 + 1; // load + write
+          } 
+          else {
+            cache_set.blocks[replace_index].dirty = false;
+            stats.total_cycles += 201; // 100 load + 1 cache + 100 memory
+          }
+
+        } 
+        else if (params.write_allocate == "no-write-allocate") {
+          //  drectly to memory dont mod cache
+
+          stats.total_cycles += 100; 
+        }
+      }
+    }
+
+  } //while loop brack
+
+
 }
 
 void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
