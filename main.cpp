@@ -120,6 +120,14 @@ void simulate_direct(cache &cach, const configParameters param, results &result 
 
 void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
   // TODO: implement
+  if (params.cache_type == "direct") { simulate_direct(c, params, stats); }
+  else if (params.cache_type == "set-associative") { simulate_set_associative(c, params, stats); }
+  else if (params.cache_type == "fully-associative") { simulate_fully_associative(c, params, stats);} 
+  else {
+    cerr << "Error:unknown cache type in run_simulation()" << std::endl;
+    exit(1);
+  }
+  
 }
 
 
