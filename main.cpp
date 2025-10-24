@@ -133,11 +133,17 @@ cache initialize_cache(const configParameters params) {
   return c;
 }
 
+cacheStats initialize_stats() {
+  cacheStats s = {0, 0, 0, 0, 0, 0, 0};
+  return s;
+}
+
+
 
 int main( int argc, char **argv ) {
   // TODO: implement
   configParameters params = parse(argc, argv);
-
+  cacheStats stats = initialize_stats();
   cache cache = initialize_cache(params);
   return 0;
 }
