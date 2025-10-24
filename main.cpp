@@ -2,6 +2,7 @@
 #include <vector>    
 #include <cstdint>   
 #include <sstream>
+#include <cmath>
 
 
 using std::vector;
@@ -11,6 +12,7 @@ using std::stoi;
 using std::exit;
 using std::cin;
 using std::istringstream; 
+using std::stoul;
 
 struct block {
     bool valid;
@@ -98,26 +100,6 @@ configParameters parse(int argc, char **argv) {
     return params; 
 }
 
-void simulate_direct(cache &cach, const configParameters param, results &result ) {
-    string line;
-    string address;
-    char operation;
-    unsigned extra;
-    
-
-    while (getline(cin, line)) {
-      if (line.empty()) {
-        continue;
-      }
-      istringstream str(line);
-      str >> operation; 
-      str >> address;
-      str >> extra;
-
-    }
-
-}
-
 cache initialize_cache(const configParameters params) {
   cache c;
   c.sets = vector<set>(params.num_sets);
@@ -131,6 +113,70 @@ cache initialize_cache(const configParameters params) {
     }   
   }
   return c;
+}
+
+void simulate_direct(cache &cach, const configParameters param, cacheStats &result ) {
+    string line;
+    string address;
+    char operation;
+    unsigned extra;
+    
+    int offset_bits = log2(param.block_size);
+    int index_bits  = log2(param.num_sets);
+
+    while (getline(cin, line)) {
+      if (line.empty()) {
+        continue;
+      }
+      istringstream str(line);
+      str >> operation; 
+      str >> address;
+      str >> extra;
+
+      uint32_t address_int = stoul(address, nullptr, 16);
+      uint32_t index = (address_int >> offset_bits) & ((1 << index_bits) - 1);
+      uint32_t tag = address_int >> (offset_bits + index_bits);
+
+      block &b = cach.sets[index].blocks[0];
+
+      if (b.valid && b.tag == tag) {
+        if (operation == 'l') {
+          result.load_hits++;
+          result.total_cycles += 1;
+        } else if(operation == 's') {
+          result.store_hits++;
+          
+          if (param.write_rule == "write-through") {
+            result.total_cycles += 101;
+          } else if (param.write_rule == "write-back") {
+            result.total_cycles += 1;
+            b.dirty = true;
+          }
+        }
+      } else {
+        if (operation == 's') {
+          result.store_misses++;
+
+          if (param.write_allocate == "write-allocate") {
+            result.total_cycles += 101;
+            b.tag = tag;
+            b.valid = true;
+
+            if (param.write_rule == "write-through") {
+              result.total_cycles += 100;
+            } else if (param.write_rule == "write-back") {
+              b.dirty = true;
+            }
+          }
+        } else if (operation == 'l') {
+          result.total_cycles += 101;
+          result.load_misses++;
+          b.tag = tag;
+          b.valid = true;
+          b.dirty = false;
+        }
+      }
+    }
 }
 
 
