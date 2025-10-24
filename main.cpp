@@ -108,8 +108,9 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
     char operation;
     unsigned extra;
     
-    int offset_bits = log2(param.block_size);
-    int index_bits  = log2(param.num_sets);
+    int offset_bits = (int) log2(param.block_size);
+    int index_bits  = (int) log2(param.num_sets);
+    int adjustedSize = 100 * (param.block_size / 4);
 
     while (getline(cin, line)) {
       if (line.empty()) {
@@ -126,6 +127,11 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
 
       block &b = cach.sets[index].blocks[0];
 
+      if (b.valid && b.dirty && b.tag != tag && param.write_rule == "write-back") {
+        result.total_cycles += adjustedSize;
+        b.dirty = false;
+      }
+
       if (b.valid && b.tag == tag) {
         if (operation == 'l') {
           result.load_hits++;
@@ -134,7 +140,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
           result.store_hits++;
           
           if (param.write_rule == "write-through") {
-            result.total_cycles += 100 + 1;
+            result.total_cycles += 1 + adjustedSize;
           } else if (param.write_rule == "write-back") {
             result.total_cycles += 1;
             b.dirty = true;
@@ -145,18 +151,21 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
           result.store_misses++;
 
           if (param.write_allocate == "write-allocate") {
-            result.total_cycles += 100 + 1;
+            result.total_cycles += adjustedSize;
             b.tag = tag;
             b.valid = true;
 
             if (param.write_rule == "write-through") {
-              result.total_cycles += 100;
+              result.total_cycles += 1 + adjustedSize;
             } else if (param.write_rule == "write-back") {
+              result.total_cycles++;
               b.dirty = true;
             }
+          } else if (param.write_allocate == "no-write-allocate") {
+            result.total_cycles += 1 + adjustedSize;
           }
         } else if (operation == 'l') {
-          result.total_cycles += 100 + 1;
+          result.total_cycles += 1 + adjustedSize;
           result.load_misses++;
           b.tag = tag;
           b.valid = true;
@@ -183,13 +192,11 @@ block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
   }
 
   if (toEvict->dirty && toEvict->valid && param.write_rule == "write-back") {
-    stats.total_cycles += 100;
+    stats.total_cycles += 101;
     toEvict->dirty = false;
   }
 
   return toEvict;
-
-
 }
 
 
@@ -239,8 +246,8 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
         } else if (operation == 's') {
           stats.store_hits++;
           if (param.write_rule == "write-through") {
-            stats.total_cycles += 100 + 1;
-          } else if (param.write_rule == "write_back") {
+            stats.total_cycles += 101;
+          } else if (param.write_rule == "write-back") {
             b.dirty = true;
             stats.total_cycles++;
           }
@@ -258,7 +265,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
 
       if (operation == 'l' || param.write_allocate == "write-allocate") {
         block *toEvict = chooseBlock(s, param, stats);
-        stats.total_cycles += 100 + 1;
+        stats.total_cycles += 101;
         toEvict->valid = true;
         toEvict-> tag = tag;
         toEvict->timestamp = current_time;
@@ -515,6 +522,7 @@ void print_stats(const cacheStats &stats) {
   cout << "Load misses: " << stats.load_misses << endl;
   cout << "Store hits: " << stats.store_hits << endl;
   cout << "Store misses: " << stats.store_misses << endl;
+  cout << "Total cycles: " << stats.total_cycles << endl;
 }
 
 int main( int argc, char **argv ) {
