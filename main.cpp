@@ -33,6 +33,9 @@ struct configParameters {
     string cache_type;
 };
 
+bool power_of_two(int x) {
+    return x > 0 && (x & (x - 1)) == 0;
+}
 
 configParameters parse(int argc, char **argv) {
     if (argc != 7) {
@@ -49,8 +52,13 @@ configParameters parse(int argc, char **argv) {
     params.eviction_rule = argv[6];
 
     if (params.num_sets <= 0 || params.blocks_in_set <= 0 || params.block_size < 4) {
-      cerr << "Error: Invalid cache parameters\n";
-      exit(1);
+        cerr << "Error: Invalid cache parameters\n";
+        exit(1);
+    }
+
+    if (!power_of_two(params.num_sets) || !power_of_two(params.blocks_in_set) || power_of_two(params.block_size)) {
+        cerr << "Error: Number of sets, blocks in sets, and block size must all be powers of 2.\n";
+        exit(1);
     }
 
     if (params.write_rule == "write-back" && params.write_allocate == "no-write-allocate") {
@@ -73,8 +81,6 @@ configParameters parse(int argc, char **argv) {
       cerr << "Error: Invalid combinations of num_sets and block_size. Does not correspond to any cache type.\n";
       exit(1);
     }
-
-
     return params;
 }
 
