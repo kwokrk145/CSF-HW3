@@ -37,14 +37,14 @@ struct configParameters {
     string cache_type;
 };
 
-struct results {
-  uint64_t total_loads = 0;
-  uint64_t total_stores = 0;
-  uint64_t load_hits = 0;
-  uint64_t load_misses = 0;
-  uint64_t store_hits = 0;
-  uint64_t store_misses = 0;
-  uint64_t total_cycles = 0;
+struct cacheStats {
+    uint64_t total_loads;
+    uint64_t total_stores;
+    uint64_t load_hits;
+    uint64_t load_misses;
+    uint64_t store_hits;
+    uint64_t store_misses;
+    uint64_t total_cycles;
 };
 
 bool power_of_two(int x) {
