@@ -13,6 +13,8 @@ using std::exit;
 using std::cin;
 using std::istringstream; 
 using std::stoul;
+using std::cout;
+using std::endl;
 
 struct block {
     bool valid;
@@ -106,61 +108,6 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
     char operation;
     unsigned extra;
     
-
-    while (getline(cin, line)) {
-      if (line.empty()) {
-        continue;
-      }
-      istringstream str(line);
-      str >> operation; 
-      str >> address;
-      str >> extra;
-
-    }
-
-}
-
-void simulate_set_associative(cache &c, const configParameters &params, cacheStats &stats) {
-  // TODO: implement
-}
-
-void simulate_fully_associative(cache &c, const configParameters &params, cacheStats &stats) {
-  // TODO: implement
-}
-
-void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
-  // TODO: implement
-  if (params.cache_type == "direct") { simulate_direct(c, params, stats); }
-  else if (params.cache_type == "set-associative") { simulate_set_associative(c, params, stats); }
-  else if (params.cache_type == "fully-associative") { simulate_fully_associative(c, params, stats);} 
-  else {
-    cerr << "Error:unknown cache type in run_simulation()" << std::endl;
-    exit(1);
-  }
-}
-
-
-cache initialize_cache(const configParameters params) {
-  cache c;
-  c.sets = vector<set>(params.num_sets);
-  for (int i = 0; i < params.num_sets; i++) {
-    c.sets[i].blocks = vector<block>(params.blocks_in_set);
-    for (int j = 0; j < params.blocks_in_set; j++) {
-      c.sets[i].blocks[j].valid = false;
-      c.sets[i].blocks[j].dirty = false;
-      c.sets[i].blocks[j].tag = 0;
-      c.sets[i].blocks[j].timestamp = 0;
-    }   
-  }
-  return c;
-}
-
-void simulate_direct(cache &cach, const configParameters param, cacheStats &result ) {
-    string line;
-    string address;
-    char operation;
-    unsigned extra;
-    
     int offset_bits = log2(param.block_size);
     int index_bits  = log2(param.num_sets);
 
@@ -218,6 +165,43 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
       }
     }
 }
+
+
+void simulate_set_associative(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
+void simulate_fully_associative(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+}
+
+void run_simulation(cache &c, const configParameters &params, cacheStats &stats) {
+  // TODO: implement
+  if (params.cache_type == "direct") { simulate_direct(c, params, stats); }
+  else if (params.cache_type == "set-associative") { simulate_set_associative(c, params, stats); }
+  else if (params.cache_type == "fully-associative") { simulate_fully_associative(c, params, stats);} 
+  else {
+    cerr << "Error:unknown cache type in run_simulation()" << std::endl;
+    exit(1);
+  }
+}
+
+
+cache initialize_cache(const configParameters params) {
+  cache c;
+  c.sets = vector<set>(params.num_sets);
+  for (int i = 0; i < params.num_sets; i++) {
+    c.sets[i].blocks = vector<block>(params.blocks_in_set);
+    for (int j = 0; j < params.blocks_in_set; j++) {
+      c.sets[i].blocks[j].valid = false;
+      c.sets[i].blocks[j].dirty = false;
+      c.sets[i].blocks[j].tag = 0;
+      c.sets[i].blocks[j].timestamp = 0;
+    }   
+  }
+  return c;
+}
+
 
 cacheStats initialize_stats() {
   cacheStats s = {0, 0, 0, 0, 0, 0, 0};
