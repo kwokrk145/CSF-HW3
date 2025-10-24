@@ -116,10 +116,26 @@ void simulate_direct(cache &cach, const configParameters param, results &result 
 
     }
 
+}cache initialize_cache(const configParameters params) {
+  cache c;
+  c.sets = vector<set>(params.num_sets);
+  for (int i = 0; i < params.num_sets; i++) {
+    c.sets[i].blocks = vector<block>(params.blocks_in_set);
+    for (int j = 0; j < params.blocks_in_set; j++) {
+      c.sets[i].blocks[j].valid = false;
+      c.sets[i].blocks[j].dirty = false;
+      c.sets[i].blocks[j].tag = 0;
+      c.sets[i].blocks[j].timestamp = 0;
+    }   
+  }
+  return c;
 }
+
 
 int main( int argc, char **argv ) {
   // TODO: implement
   configParameters params = parse(argc, argv);
+
+  cache cache = initialize_cache(params);
   return 0;
 }
