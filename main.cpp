@@ -34,13 +34,13 @@ struct configParameters {
 };
 
 struct cacheStats {
-    uint64_t total_loads
-    uint64_t total_stores
-    uint64_t load_hits
-    uint64_t load_misses
-    uint64_t store_hits
-    uint64_t store_misses
-    uint64_t total_cycles
+    uint64_t total_loads;
+    uint64_t total_stores;
+    uint64_t load_hits;
+    uint64_t load_misses;
+    uint64_t store_hits;
+    uint64_t store_misses;
+    uint64_t total_cycles;
 };
 
 bool power_of_two(int x) {
