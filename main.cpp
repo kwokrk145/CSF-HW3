@@ -30,12 +30,13 @@ struct configParameters {
     string write_allocate;
     string write_rule;
     string eviction_rule;
+    string cache_type;
 };
 
 
 configParameters parse(int argc, char **argv) {
     if (argc != 7) {
-        cerr << "Arguments are missing!";
+        cerr << "Incorrect number of arguments!";
         exit(1);
     }
 
@@ -61,9 +62,22 @@ configParameters parse(int argc, char **argv) {
         cerr << "Error: Invalid eviction rule.\n";
         exit(1);
     }
-    return params;
 
+    if (params.num_sets > 1 && params.block_size == 1) {
+      params.cache_type = "direct";
+    } else if (params.num_sets > 1 && params.block_size > 1) {
+      params.cache_type = "set-associative";
+    } else if (params.num_sets == 1 && params.block_size > 1) {
+      params.cache_type = "fully-associative";
+    } else {
+      cerr << "Error: Invalid combinations of num_sets and block_size. Does not correspond to any cache type.\n";
+      exit(1);
+    }
+
+
+    return params;
 }
+
 
 
 int main( int argc, char **argv ) {
