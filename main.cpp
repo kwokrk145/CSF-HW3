@@ -1,12 +1,16 @@
 #include <iostream>
 #include <vector>    
 #include <cstdint>   
+#include <sstream>
+
 
 using std::vector;
 using std::string;
 using std::cerr;
 using std::stoi;
 using std::exit;
+using std::cin;
+using std::istringstream; 
 
 struct block {
     bool valid;
@@ -31,6 +35,16 @@ struct configParameters {
     string write_rule;
     string eviction_rule;
     string cache_type;
+};
+
+struct results {
+  uint64_t total_loads = 0;
+  uint64_t total_stores = 0;
+  uint64_t load_hits = 0;
+  uint64_t load_misses = 0;
+  uint64_t store_hits = 0;
+  uint64_t store_misses = 0;
+  uint64_t total_cycles = 0;
 };
 
 bool power_of_two(int x) {
@@ -81,10 +95,28 @@ configParameters parse(int argc, char **argv) {
       cerr << "Error: Invalid combinations of num_sets and block_size. Does not correspond to any cache type.\n";
       exit(1);
     }
-    return params;
+    return params; 
 }
 
+void simulate_direct(cache &cach, const configParameters param, results &result ) {
+    string line;
+    string address;
+    char operation;
+    unsigned extra;
+    
 
+    while (getline(cin, line)) {
+      if (line.empty()) {
+        continue;
+      }
+      istringstream str(line);
+      str >> operation; 
+      str >> address;
+      str >> extra;
+
+    }
+
+}
 
 int main( int argc, char **argv ) {
   // TODO: implement
