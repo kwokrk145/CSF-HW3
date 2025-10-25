@@ -91,16 +91,19 @@ configParameters parse(int argc, char **argv) {
         exit(1);
     }
 
+    // ensure we have powers of two
     if (!power_of_two(params.num_sets) || !power_of_two(params.blocks_in_set)) {
         cerr << "Error: Number of sets and blocks in sets must both be powers of 2.\n";
         exit(1);
     }
 
+    // make sure we don't have the incorrect combination
     if (params.write_rule == "write-back" && params.write_allocate == "no-write-allocate") {
         cerr << "Error: Cannot combine write-back with no-write-allocate.\n";
         exit(1);
     }
 
+    // make sure we have valid rules
     if (params.eviction_rule != "lru" && params.eviction_rule != "fifo") {
         cerr << "Error: Invalid eviction rule.\n";
         exit(1);
@@ -137,6 +140,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
     int index_bits  = (int) log2(param.num_sets);
     int adjustedSize = 100 * (param.block_size / 4);
 
+    // read the lines from the file
     while (getline(cin, line)) {
       if (line.empty()) {
         continue;
@@ -146,22 +150,27 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
       str >> address;
       str >> extra;
 
+      // convert address into numerical values
       uint32_t address_int = stoul(address, nullptr, 16);
       uint32_t index = (address_int >> offset_bits) & ((1 << index_bits) - 1);
       uint32_t tag = address_int >> (offset_bits + index_bits);
 
       block &b = cach.sets[index].blocks[0];
 
+      // if we are getting rid of a dirty block, we write it back to memory
       if (b.valid && b.dirty && b.tag != tag && param.write_rule == "write-back") {
         result.total_cycles += adjustedSize;
         b.dirty = false;
       }
 
+      // following section is for hit
       if (b.valid && b.tag == tag) {
         if (operation == 'l') {
+          //  load hit
           result.load_hits++;
           result.total_cycles += 1;
         } else if(operation == 's') {
+          // store hit
           result.store_hits++;
           
           if (param.write_rule == "write-through") {
@@ -171,11 +180,13 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
             b.dirty = true;
           }
         }
+        // following section is miss
       } else {
         if (operation == 's') {
           result.store_misses++;
 
           if (param.write_allocate == "write-allocate") {
+            // bring the full block 
             result.total_cycles += adjustedSize;
             b.tag = tag;
             b.valid = true;
@@ -201,13 +212,6 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
 }
 
 
-block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
-  for (int i = 0; i < param.blocks_in_set; i++) {
-    if (s.blocks[i].valid == false) {
-      return &s.blocks[i];
-    }
-  }
-
   /**
  * Chooses a block for replacement using LRU or FIFO policy
  * @param s The cache set to search
@@ -215,6 +219,15 @@ block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
  * @param stats Statistics structure (updated if dirty block evicted)
  * @return Pointer to the block to be replaced
  */
+block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
+  // check if there's an empty space
+  for (int i = 0; i < param.blocks_in_set; i++) {
+    if (s.blocks[i].valid == false) {
+      return &s.blocks[i];
+    }
+  }
+
+  // find the lowest timestamp
   block *toEvict = &s.blocks[0];
   for (int i = 0; i < param.blocks_in_set; i++) {
     block &b = s.blocks[i];
@@ -223,7 +236,7 @@ block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
     }
   }
   int adjustedSize = 100 * (param.block_size / 4);
-
+  // write back the block before eviction
   if (toEvict->dirty && toEvict->valid && param.write_rule == "write-back") {
     stats.total_cycles += adjustedSize;
     toEvict->dirty = false;
@@ -274,11 +287,12 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
     }
 
     bool hit = false;
+    // this following section is for hit
     for (int i = 0; i < param.blocks_in_set; i++) {
       if (s.blocks[i].valid && s.blocks[i].tag == tag) {
         hit = true;
         block &b = s.blocks[i];
-        b.timestamp = current_time;
+        b.timestamp = current_time; // this is for LRU specifically
 
         if (operation == 'l') {
           stats.load_hits++;
@@ -296,6 +310,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
       }
     }
 
+    // following section is for miss
     if (!hit) {
       if (operation == 's') {
         stats.store_misses++;
@@ -304,6 +319,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
       }
 
       if (operation == 'l' || param.write_allocate == "write-allocate") {
+        // find the block to evict
         block *toEvict = chooseBlock(s, param, stats);
         stats.total_cycles += 1 + adjustedSize;
         toEvict->valid = true;
@@ -313,11 +329,12 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
 
         if (operation == 's') {
           if (param.write_rule == "write-through") {
-            stats.total_cycles += 100 + 1;
+            stats.total_cycles += 100 + 1; // cache + memory
           } else if (param.write_rule == "write-back") {
             toEvict->dirty = true;
           }
         }
+        // write directly to memory
       } else if (operation == 's' && param.write_allocate == "no-write-allocate") {
         stats.total_cycles += 1 + 100;
 
