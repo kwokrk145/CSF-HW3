@@ -156,7 +156,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
             b.valid = true;
 
             if (param.write_rule == "write-through") {
-              result.total_cycles += 1 + adjustedSize;
+              result.total_cycles += 1 + 1 + adjustedSize;
             } else if (param.write_rule == "write-back") {
               result.total_cycles++;
               b.dirty = true;
