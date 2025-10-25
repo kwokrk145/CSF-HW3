@@ -319,6 +319,9 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
 
   int offset_bits = (int)std::log2(params.block_size);
 
+  int adjustedSize = 100 * (param.block_size / 4);
+
+
   //one set: 
   set &cache_set = c.sets[0]; 
     
@@ -388,7 +391,7 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
 
           //write back if dirty and using write-back
           if (params.write_rule == "write-back" && cache_set.blocks[replace_index].dirty) {
-            stats.total_cycles += 100; // write dirty block to memory
+            stats.total_cycles += adjustedSize; // write dirty block to memory
             cache_set.blocks[replace_index].dirty = false;
           }
         }
@@ -399,7 +402,7 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
         cache_set.blocks[replace_index].tag = tag;
         cache_set.blocks[replace_index].timestamp = global_time;
 
-        stats.total_cycles += 100 + 1; // memory read + cache write
+        stats.total_cycles += adjustedSize + 1; // memory read + cache write
       }
     }
 
@@ -411,7 +414,7 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
       if (hit) {
         stats.store_hits++;
         if (params.write_rule == "write-through") {
-          stats.total_cycles += 101; // 1 for cache +100 for mem
+          stats.total_cycles += 1 + adjustedSize; // 1 for cache +100 for mem
         } 
         else if (params.write_rule == "write-back") {
           cache_set.blocks[hit_index].dirty = true;
@@ -452,7 +455,7 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
             }
 
             if (params.write_rule == "write-back" && cache_set.blocks[replace_index].dirty) {
-              stats.total_cycles += 100; // write back dirty
+              stats.total_cycles += adjustedSize; // write back dirty
               cache_set.blocks[replace_index].dirty = false;
             }
           }
@@ -463,18 +466,18 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
 
           if (params.write_rule == "write-back") {
             cache_set.blocks[replace_index].dirty = true;
-            stats.total_cycles += 100 + 1; // load + write
+            stats.total_cycles += adjustedSize + 1; // load + write
           } 
           else {
             cache_set.blocks[replace_index].dirty = false;
-            stats.total_cycles += 201; // 100 load + 1 cache + 100 memory
+            stats.total_cycles += adjustedSize + 1 + adjustedSize; // 100 load + 1 cache + 100 memory
           }
 
         } 
         else if (params.write_allocate == "no-write-allocate") {
           //  drectly to memory dont mod cache
 
-          stats.total_cycles += 100; 
+          stats.total_cycles += adjustedSize; 
         }
       }
     }
