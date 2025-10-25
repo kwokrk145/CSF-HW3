@@ -16,31 +16,36 @@ using std::stoul;
 using std::cout;
 using std::endl;
 
+//represetns a single cache block with metadata
 struct block {
-    bool valid;
-    bool dirty;
-    uint32_t tag;
-    uint64_t timestamp;
+    bool valid;      // Indicates if block contains valid data
+    bool dirty;     // indicates if block has been modified (write-back only)
+    uint32_t tag;       // Tag portion of the address
+    uint64_t timestamp;   //  for LRU/FIFO eviction policies
 };
 
+// represents a set of blocks in the cache
 struct set {
     vector<block> blocks;
 };
 
+//Represents the entire cache structure
 struct cache {
     vector<set> sets;
 };
 
+//  Configuration parameters for cache simulation
 struct configParameters {
-    int num_sets;
-    int blocks_in_set;
+    int num_sets; 
+    int blocks_in_set; //associativity
     int block_size;
-    string write_allocate;
-    string write_rule;
-    string eviction_rule;
-    string cache_type;
+    string write_allocate; // "write-allocate" or "no-write-allocate"
+    string write_rule; // "write-through" or "write-back"
+    string eviction_rule; // "lru" or "fifo"
+    string cache_type; // "direct", "set-associative" or "fully-associative"
 };
 
+// statistics collected during cache simulation
 struct cacheStats {
     uint64_t total_loads;
     uint64_t total_stores;
@@ -51,10 +56,21 @@ struct cacheStats {
     uint64_t total_cycles;
 };
 
+/**
+ * Checks if a number is a power of two
+ * @param x The number to check
+ * @return true if x is a power of two, false otherwise
+ */
 bool power_of_two(int x) {
     return x > 0 && (x & (x - 1)) == 0;
 }
 
+/**
+ * Parses command line arguments and validates cache configuration
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @return Validated configuration parameters
+ */
 configParameters parse(int argc, char **argv) {
     if (argc != 7) {
         cerr << "Incorrect number of arguments!";
@@ -69,6 +85,7 @@ configParameters parse(int argc, char **argv) {
     params.write_rule   = argv[5];
     params.eviction_rule = argv[6];
 
+    // validate parameters
     if (params.num_sets <= 0 || params.blocks_in_set <= 0 || params.block_size < 4) {
         cerr << "Error: Invalid cache parameters\n";
         exit(1);
@@ -89,6 +106,7 @@ configParameters parse(int argc, char **argv) {
         exit(1);
     }
 
+    //  cache type based on configuration
     if (params.num_sets > 1 && params.block_size == 1) {
       params.cache_type = "direct";
     } else if (params.num_sets > 1 && params.block_size > 1) {
@@ -102,6 +120,13 @@ configParameters parse(int argc, char **argv) {
     return params; 
 }
 
+/**
+ * simulates a direct-mapped cache
+ * Direct-mapped: Each memory block maps to exactly one cache location
+ * @param cach The cache structure
+ * @param param Cache configuration parameters
+ * @param result Statistics structure to update
+ */
 void simulate_direct(cache &cach, const configParameters param, cacheStats &result ) {
     string line;
     string address;
@@ -183,6 +208,13 @@ block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
     }
   }
 
+  /**
+ * Chooses a block for replacement using LRU or FIFO policy
+ * @param s The cache set to search
+ * @param param Cache configuration parameters
+ * @param stats Statistics structure (updated if dirty block evicted)
+ * @return Pointer to the block to be replaced
+ */
   block *toEvict = &s.blocks[0];
   for (int i = 0; i < param.blocks_in_set; i++) {
     block &b = s.blocks[i];
@@ -200,7 +232,13 @@ block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
   return toEvict;
 }
 
-
+/**
+ * Simulates a set-associative cache
+ * Set-associative: Multiple blocks per set, memory blocks can map to any block in a set
+ * @param c The cache structure
+ * @param param Cache configuration parameters
+ * @param stats Statistics structure to update
+ */
 void simulate_set_associative(cache &c, const configParameters &param, cacheStats &stats) {
   // TODO: implement
   string line;
