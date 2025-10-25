@@ -319,7 +319,7 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
 
   int offset_bits = (int)std::log2(params.block_size);
 
-  int adjustedSize = 100 * (param.block_size / 4);
+  int adjustedSize = 100 * (params.block_size / 4);
 
 
   //one set: 
