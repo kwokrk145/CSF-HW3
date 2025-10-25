@@ -140,7 +140,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
           result.store_hits++;
           
           if (param.write_rule == "write-through") {
-            result.total_cycles += 1 + adjustedSize;
+            result.total_cycles += 1 + 100;
           } else if (param.write_rule == "write-back") {
             result.total_cycles += 1;
             b.dirty = true;
@@ -156,7 +156,7 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
             b.valid = true;
 
             if (param.write_rule == "write-through") {
-              result.total_cycles += 1 + adjustedSize;
+              result.total_cycles += 1 + 100;
             } else if (param.write_rule == "write-back") {
               result.total_cycles++;
               b.dirty = true;
@@ -248,7 +248,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
         } else if (operation == 's') {
           stats.store_hits++;
           if (param.write_rule == "write-through") {
-            stats.total_cycles += 1 + adjustedSize;
+            stats.total_cycles += 1 + 100;
           } else if (param.write_rule == "write-back") {
             b.dirty = true;
             stats.total_cycles++;
@@ -275,7 +275,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
 
         if (operation == 's') {
           if (param.write_rule == "write-through") {
-            stats.total_cycles += adjustedSize + 1;
+            stats.total_cycles += 100 + 1;
           } else if (param.write_rule == "write-back") {
             toEvict->dirty = true;
           }
