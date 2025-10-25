@@ -190,9 +190,10 @@ block* chooseBlock(set &s, const configParameters &param, cacheStats &stats) {
       toEvict = &b;
     }
   }
+  int adjustedSize = 100 * (param.block_size / 4);
 
   if (toEvict->dirty && toEvict->valid && param.write_rule == "write-back") {
-    stats.total_cycles += 101;
+    stats.total_cycles += adjustedSize;
     toEvict->dirty = false;
   }
 
@@ -210,6 +211,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
 
   int offset_bits = log2(param.block_size);
   int index_bits = log2(param.num_sets);
+  int adjustedSize = 100 * (param.block_size / 4);
 
   while (getline(cin, line)) {
     if (line.empty()) {
@@ -246,7 +248,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
         } else if (operation == 's') {
           stats.store_hits++;
           if (param.write_rule == "write-through") {
-            stats.total_cycles += 101;
+            stats.total_cycles += 1 + adjustedSize;
           } else if (param.write_rule == "write-back") {
             b.dirty = true;
             stats.total_cycles++;
@@ -265,7 +267,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
 
       if (operation == 'l' || param.write_allocate == "write-allocate") {
         block *toEvict = chooseBlock(s, param, stats);
-        stats.total_cycles += 101;
+        stats.total_cycles += 1 + adjustedSize;
         toEvict->valid = true;
         toEvict-> tag = tag;
         toEvict->timestamp = current_time;
@@ -273,13 +275,13 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
 
         if (operation == 's') {
           if (param.write_rule == "write-through") {
-            stats.total_cycles += 100;
+            stats.total_cycles += adjustedSize + 1;
           } else if (param.write_rule == "write-back") {
             toEvict->dirty = true;
           }
         }
       } else if (operation == 's' && param.write_allocate == "no-write-allocate") {
-        stats.total_cycles += 100;
+        stats.total_cycles += 1 + adjustedSize;
 
       }
 
