@@ -259,11 +259,12 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
   char operation;
   unsigned extra;
   uint64_t current_time = 0;
-
+  
   int offset_bits = log2(param.block_size);
   int index_bits = log2(param.num_sets);
   int adjustedSize = 100 * (param.block_size / 4);
 
+  // get line by line
   while (getline(cin, line)) {
     if (line.empty()) {
       continue;
@@ -326,7 +327,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
         toEvict-> tag = tag;
         toEvict->timestamp = current_time;
         toEvict->dirty = false;
-
+        
         if (operation == 's') {
           if (param.write_rule == "write-through") {
             stats.total_cycles += 100 + 1; // cache + memory
