@@ -414,7 +414,7 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
       if (hit) {
         stats.store_hits++;
         if (params.write_rule == "write-through") {
-          stats.total_cycles += 1 + adjustedSize; // 1 for cache +100 for mem
+          stats.total_cycles += 1 + 100; // 1 for cache +100 for mem
         } 
         else if (params.write_rule == "write-back") {
           cache_set.blocks[hit_index].dirty = true;
@@ -470,14 +470,14 @@ void simulate_fully_associative(cache &c, const configParameters &params, cacheS
           } 
           else {
             cache_set.blocks[replace_index].dirty = false;
-            stats.total_cycles += adjustedSize + 1 + adjustedSize; // 100 load + 1 cache + 100 memory
+            stats.total_cycles += adjustedSize + 1 + 100; // 100 load + 1 cache + 100 memory
           }
 
         } 
         else if (params.write_allocate == "no-write-allocate") {
           //  drectly to memory dont mod cache
 
-          stats.total_cycles += adjustedSize; 
+          stats.total_cycles += 1 + 100; 
         }
       }
     }
