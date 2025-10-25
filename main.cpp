@@ -156,13 +156,13 @@ void simulate_direct(cache &cach, const configParameters param, cacheStats &resu
             b.valid = true;
 
             if (param.write_rule == "write-through") {
-              result.total_cycles += 1 + 1 + adjustedSize;
+              result.total_cycles += 1 + adjustedSize;
             } else if (param.write_rule == "write-back") {
               result.total_cycles++;
               b.dirty = true;
             }
           } else if (param.write_allocate == "no-write-allocate") {
-            result.total_cycles += 1 + adjustedSize;
+            result.total_cycles += 1 + 100;
           }
         } else if (operation == 'l') {
           result.total_cycles += 1 + adjustedSize;
@@ -281,7 +281,7 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
           }
         }
       } else if (operation == 's' && param.write_allocate == "no-write-allocate") {
-        stats.total_cycles += 1 + adjustedSize;
+        stats.total_cycles += 1 + 100;
 
       }
 
