@@ -293,7 +293,10 @@ void simulate_set_associative(cache &c, const configParameters &param, cacheStat
       if (s.blocks[i].valid && s.blocks[i].tag == tag) {
         hit = true;
         block &b = s.blocks[i];
-        b.timestamp = current_time; // this is for LRU specifically
+
+        if (param.eviction_rule == "lru") {
+          b.timestamp = current_time; // this is for LRU specifically
+        }
 
         if (operation == 'l') {
           stats.load_hits++;
